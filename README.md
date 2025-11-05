@@ -96,17 +96,3 @@ A: 当然可以！生成后可以在 Excalidraw 画布上自由编辑，包括�
 ## 🛠️ 技术栈
 
 Next.js 16 · React 19 · Excalidraw · Tailwind CSS 4 · Monaco Editor
-
-## 📄 许可证
-
-MIT License
-
-## 联系作者
-微信号： liujuntaoljt 
----
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=liujuntao123/smart-excalidraw-next&type=date&legend=top-left)](https://www.star-history.com/#liujuntao123/smart-excalidraw-next&type=date&legend=top-left)
-
-**用自然语言，绘制专业图表** - 让可视化创作回归简单
