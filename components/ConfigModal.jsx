@@ -22,9 +22,19 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
   // Load all configs when modal opens
   useEffect(() => {
     if (isOpen) {
-      setAllConfigs(getAllConfigs());
+      loadConfigs();
     }
   }, [isOpen]);
+
+  const loadConfigs = async () => {
+    try {
+      const configs = await getAllConfigs();
+      setAllConfigs(configs);
+    } catch (error) {
+      console.error('Failed to load configs:', error);
+      setError('加载配置失败');
+    }
+  };
 
   // 仅在初始配置变更时同步到本地表单状态，避免在模型加载失败时还原用户输入
   useEffect(() => {
@@ -97,37 +107,53 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!config.type || !config.baseUrl || !config.apiKey || !config.model) {
       setError('请填写所有必填字段');
       return;
     }
 
-    saveProvider(config, true);
-    onSave(config);
-    onClose();
+    try {
+      await saveProvider(config, true);
+      onSave(config);
+      onClose();
+    } catch (error) {
+      console.error('Failed to save config:', error);
+      setError('保存配置失败');
+    }
   };
 
-  const handleDeleteProvider = (providerId) => {
+  const handleDeleteProvider = async (providerId) => {
     if (confirm('确定要删除此配置吗？')) {
-      deleteProvider(providerId);
-      setAllConfigs(getAllConfigs());
-      
-      // If we deleted the current provider, notify parent
-      if (allConfigs.currentProviderId === providerId) {
-        const newConfig = getConfig();
-        onSave(newConfig);
+      try {
+        await deleteProvider(providerId);
+        await loadConfigs();
+        
+        // If we deleted the current provider, notify parent
+        if (allConfigs.currentProviderId === providerId) {
+          const { getConfig } = await import('@/lib/config');
+          const newConfig = await getConfig();
+          onSave(newConfig);
+        }
+      } catch (error) {
+        console.error('Failed to delete provider:', error);
+        setError('删除配置失败');
       }
     }
   };
 
-  const handleSetCurrentProvider = (providerId) => {
-    setCurrentProvider(providerId);
-    setAllConfigs(getAllConfigs());
-    
-    // Notify parent of the change
-    const currentConfig = allConfigs.providers.find(p => p.id === providerId);
-    onSave(currentConfig);
+  const handleSetCurrentProvider = async (providerId) => {
+    try {
+      await setCurrentProvider(providerId);
+      await loadConfigs();
+      
+      // Notify parent of the change
+      const currentConfig = allConfigs.providers.find(p => p.id === providerId);
+      onSave(currentConfig);
+    } catch (error) {
+      console.error('Failed to set current provider:', error);
+      setError('切换配置失败');
+    }
   };
 
   const handleEditProvider = (provider) => {

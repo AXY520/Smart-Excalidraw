@@ -202,6 +202,9 @@ export default function ImageUpload({ onImageSelect, isGenerating, chartType, on
             <p className="text-xs text-gray-400">
               支持 JPG、PNG、WebP、GIF 格式，最大 5MB
             </p>
+            <p className="text-xs text-gray-400">
+              需要模型支持图像输入
+            </p>
           </div>
 
           <input

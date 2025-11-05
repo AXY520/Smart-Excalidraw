@@ -1,0 +1,21 @@
+{
+  "providers": [
+    {
+      "id": "provider_1762367987128",
+      "name": "New-api",
+      "type": "openai",
+      "baseUrl": "http://8.148.79.179:3000/v1",
+      "apiKey": "sk-S3a442miFcoFtxLbQsgIVANddQNsHvL33cv4CVxWjVcMQt9i",
+      "model": "deepseek-ai/DeepSeek-V3.2-Exp"
+    },
+    {
+      "id": "provider_1762368040478",
+      "name": "魔搭",
+      "type": "openai",
+      "baseUrl": "https://api-inference.modelscope.cn/v1",
+      "apiKey": "ms-e66b6a17-8931-48a6-9c86-8dfdc6007310",
+      "model": "ZhipuAI/GLM-4.6"
+    }
+  ],
+  "currentProviderId": "provider_1762368040478"
+}

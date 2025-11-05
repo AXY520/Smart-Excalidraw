@@ -32,12 +32,20 @@ export default function Home() {
 
   // Load config on mount
   useEffect(() => {
-    const savedConfig = getConfig();
-    const allProviderConfigs = getAllConfigs();
-    if (savedConfig) {
-      setConfig(savedConfig);
-    }
-    setAllConfigs(allProviderConfigs);
+    const loadConfigs = async () => {
+      try {
+        const savedConfig = await getConfig();
+        const allProviderConfigs = await getAllConfigs();
+        if (savedConfig) {
+          setConfig(savedConfig);
+        }
+        setAllConfigs(allProviderConfigs);
+      } catch (error) {
+        console.error('Failed to load configs:', error);
+      }
+    };
+    
+    loadConfigs();
   }, []);
 
   // Post-process Excalidraw code: remove markdown wrappers and fix unescaped quotes
@@ -305,9 +313,14 @@ export default function Home() {
   };
 
   // Handle saving config
-  const handleSaveConfig = (newConfig) => {
+  const handleSaveConfig = async (newConfig) => {
     setConfig(newConfig);
-    setAllConfigs(getAllConfigs());
+    try {
+      const allProviderConfigs = await getAllConfigs();
+      setAllConfigs(allProviderConfigs);
+    } catch (error) {
+      console.error('Failed to refresh configs:', error);
+    }
   };
 
   // Handle toggling left panel visibility
@@ -373,10 +386,15 @@ export default function Home() {
                       {allConfigs.providers.map((provider) => (
                         <button
                           key={provider.id}
-                          onClick={() => {
-                            setCurrentProvider(provider.id);
-                            setConfig(provider);
-                            setAllConfigs(getAllConfigs());
+                          onClick={async () => {
+                            try {
+                              await setCurrentProvider(provider.id);
+                              setConfig(provider);
+                              const allProviderConfigs = await getAllConfigs();
+                              setAllConfigs(allProviderConfigs);
+                            } catch (error) {
+                              console.error('Failed to switch provider:', error);
+                            }
                           }}
                           className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
                             allConfigs.currentProviderId === provider.id ? 'bg-gray-100 font-medium' : ''
