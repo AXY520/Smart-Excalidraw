@@ -6,7 +6,7 @@ import Chat from '@/components/Chat';
 import CodeEditor from '@/components/CodeEditor';
 import ConfigModal from '@/components/ConfigModal';
 import ContactModal from '@/components/ContactModal';
-import { getConfig, saveConfig, isConfigValid } from '@/lib/config';
+import { getConfig, getAllConfigs, setCurrentProvider, isConfigValid } from '@/lib/config';
 import { optimizeExcalidrawCode } from '@/lib/optimizeArrows';
 
 // Dynamically import ExcalidrawCanvas to avoid SSR issues
@@ -16,6 +16,7 @@ const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), 
 
 export default function Home() {
   const [config, setConfig] = useState(null);
+  const [allConfigs, setAllConfigs] = useState({ providers: [], currentProviderId: null });
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
@@ -32,9 +33,11 @@ export default function Home() {
   // Load config on mount
   useEffect(() => {
     const savedConfig = getConfig();
+    const allProviderConfigs = getAllConfigs();
     if (savedConfig) {
       setConfig(savedConfig);
     }
+    setAllConfigs(allProviderConfigs);
   }, []);
 
   // Post-process Excalidraw code: remove markdown wrappers and fix unescaped quotes
@@ -303,8 +306,8 @@ export default function Home() {
 
   // Handle saving config
   const handleSaveConfig = (newConfig) => {
-    saveConfig(newConfig);
     setConfig(newConfig);
+    setAllConfigs(getAllConfigs());
   };
 
   // Handle toggling left panel visibility
@@ -358,6 +361,37 @@ export default function Home() {
               <span className="text-xs text-gray-900 font-medium">
                 {config.name || config.type} - {config.model}
               </span>
+              {allConfigs.providers.length > 1 && (
+                <div className="relative group">
+                  <button className="text-gray-500 hover:text-gray-700">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                    <div className="py-1">
+                      {allConfigs.providers.map((provider) => (
+                        <button
+                          key={provider.id}
+                          onClick={() => {
+                            setCurrentProvider(provider.id);
+                            setConfig(provider);
+                            setAllConfigs(getAllConfigs());
+                          }}
+                          className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${
+                            allConfigs.currentProviderId === provider.id ? 'bg-gray-100 font-medium' : ''
+                          }`}
+                        >
+                          {provider.name}
+                          {allConfigs.currentProviderId === provider.id && (
+                            <span className="ml-2 text-xs text-gray-500">(当前)</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <button

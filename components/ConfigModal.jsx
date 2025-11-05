@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getAllConfigs, saveProvider, deleteProvider, setCurrentProvider } from '@/lib/config';
 
 export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) {
   const [config, setConfig] = useState({
+    id: '',
     name: '',
     type: 'openai',
     baseUrl: '',
@@ -14,11 +16,30 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [useCustomModel, setUseCustomModel] = useState(false);
+  const [activeTab, setActiveTab] = useState('edit'); // 'edit' or 'manage'
+  const [allConfigs, setAllConfigs] = useState({ providers: [], currentProviderId: null });
+
+  // Load all configs when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setAllConfigs(getAllConfigs());
+    }
+  }, [isOpen]);
 
   // 仅在初始配置变更时同步到本地表单状态，避免在模型加载失败时还原用户输入
   useEffect(() => {
     if (initialConfig) {
       setConfig(initialConfig);
+    } else {
+      // Reset form for new provider
+      setConfig({
+        id: '',
+        name: '',
+        type: 'openai',
+        baseUrl: '',
+        apiKey: '',
+        model: '',
+      });
     }
   }, [initialConfig]);
 
@@ -82,8 +103,48 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
       return;
     }
 
+    saveProvider(config, true);
     onSave(config);
     onClose();
+  };
+
+  const handleDeleteProvider = (providerId) => {
+    if (confirm('确定要删除此配置吗？')) {
+      deleteProvider(providerId);
+      setAllConfigs(getAllConfigs());
+      
+      // If we deleted the current provider, notify parent
+      if (allConfigs.currentProviderId === providerId) {
+        const newConfig = getConfig();
+        onSave(newConfig);
+      }
+    }
+  };
+
+  const handleSetCurrentProvider = (providerId) => {
+    setCurrentProvider(providerId);
+    setAllConfigs(getAllConfigs());
+    
+    // Notify parent of the change
+    const currentConfig = allConfigs.providers.find(p => p.id === providerId);
+    onSave(currentConfig);
+  };
+
+  const handleEditProvider = (provider) => {
+    setConfig(provider);
+    setActiveTab('edit');
+  };
+
+  const handleAddNewProvider = () => {
+    setConfig({
+      id: '',
+      name: '',
+      type: 'openai',
+      baseUrl: '',
+      apiKey: '',
+      model: '',
+    });
+    setActiveTab('edit');
   };
 
   if (!isOpen) return null;
@@ -97,10 +158,10 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded border border-gray-300 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded border border-gray-300 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">LLM 配置</h2>
+          <h2 className="text-lg font-semibold text-gray-900">LLM 配置管理</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
@@ -111,8 +172,34 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('edit')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 ${
+              activeTab === 'edit'
+                ? 'bg-white text-gray-900 border-b-2 border-gray-900'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            {config.id ? '编辑配置' : '添加配置'}
+          </button>
+          <button
+            onClick={() => setActiveTab('manage')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors duration-200 ${
+              activeTab === 'manage'
+                ? 'bg-white text-gray-900 border-b-2 border-gray-900'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            管理配置 ({allConfigs.providers.length})
+          </button>
+        </div>
+
         {/* Body */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-6 py-4">
+          {activeTab === 'edit' ? (
+            <div className="space-y-4">
           {error && (
             <div className="px-4 py-3 bg-red-50 border border-red-200 rounded">
               <p className="text-sm text-red-800">{error}</p>
@@ -252,23 +339,101 @@ export default function ConfigModal({ isOpen, onClose, onSave, initialConfig }) 
               />
             )}
           </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-medium text-gray-900">已保存的配置</h3>
+                <button
+                  onClick={handleAddNewProvider}
+                  className="px-3 py-1.5 text-sm bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors duration-200"
+                >
+                  添加新配置
+                </button>
+              </div>
+
+              {allConfigs.providers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>暂无配置</p>
+                  <button
+                    onClick={handleAddNewProvider}
+                    className="mt-2 text-sm text-gray-900 hover:underline"
+                  >
+                    添加第一个配置
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {allConfigs.providers.map((provider) => (
+                    <div
+                      key={provider.id}
+                      className={`p-3 border rounded-lg ${
+                        allConfigs.currentProviderId === provider.id
+                          ? 'border-gray-900 bg-gray-50'
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <h4 className="font-medium text-gray-900">{provider.name}</h4>
+                            {allConfigs.currentProviderId === provider.id && (
+                              <span className="px-2 py-0.5 text-xs bg-gray-900 text-white rounded">当前</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {provider.type === 'openai' ? 'OpenAI' : 'Anthropic'} - {provider.model}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1 truncate">{provider.baseUrl}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {allConfigs.currentProviderId !== provider.id && (
+                            <button
+                              onClick={() => handleSetCurrentProvider(provider.id)}
+                              className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors duration-200"
+                            >
+                              设为当前
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEditProvider(provider)}
+                            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors duration-200"
+                          >
+                            编辑
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProvider(provider.id)}
+                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors duration-200"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors duration-200"
-          >
-            取消
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 text-white bg-gray-900 rounded hover:bg-gray-800 transition-colors duration-200"
-          >
-            保存配置
-          </button>
-        </div>
+        {/* Footer - Only show on edit tab */}
+        {activeTab === 'edit' && (
+          <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors duration-200"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 text-white bg-gray-900 rounded hover:bg-gray-800 transition-colors duration-200"
+            >
+              {config.id ? '更新配置' : '保存配置'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
