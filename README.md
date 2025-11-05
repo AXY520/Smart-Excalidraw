@@ -67,7 +67,7 @@ AI 会自动生成图表，你可以在画布上直接编辑和调整。
 
 ```bash
 # 克隆项目
-git clone <your-repo-url>
+git clone https://github.com/AXY520/Smart-Excalidraw.git
 cd smart-excalidraw-next
 
 # 安装依赖
