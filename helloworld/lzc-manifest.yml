@@ -1,0 +1,11 @@
+name: helloworld
+package: cloud.lazycat.app.helloworld
+version: 0.0.1
+description: 
+license: https://choosealicense.com/licenses/mit/
+homepage: 
+author: 
+application:
+  subdomain: helloworld
+  routes:
+    - /=file:///lzcapp/pkg/content/dist

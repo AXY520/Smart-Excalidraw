@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  smart-excalidraw:
+    image: registry.cn-hangzhou.aliyuncs.com/axy5920/excalidraw:0.0.1
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
