@@ -14,7 +14,7 @@ COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile
 
 # 复制源代码
-COPY . .
+#COPY . .
 
 # 构建应用
 RUN pnpm build

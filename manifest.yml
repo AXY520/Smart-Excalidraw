@@ -1,7 +1,7 @@
 lzc-sdk-version: '0.1'
 name: smart-excalidraw
 package: cloud.lazycat.app.excalidrawsmart
-version: 0.0.1
+version: 0.0.2
 description: 用自然语言，绘制专业图表
 homepage: https://github.com/AXY520/Smart-Excalidraw
 author: 
@@ -23,7 +23,7 @@ application:
     - /=http://smart-excalidraw:3000/
 services:
   smart-excalidraw:
-    image: registry.lazycat.cloud/aixinyin/axy5920/excalidraw:a64d4766c0e3e1a0
+    image: registry.lazycat.cloud/aixinyin/axy5920/excalidraw:abb9b2a6cf1559d4
     environment:
       - NODE_ENV=production
       - PORT=3000
