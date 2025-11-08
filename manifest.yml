@@ -1,23 +1,34 @@
-lzc-sdk-version: "0.1"
+lzc-sdk-version: '0.1'
 name: smart-excalidraw
-package: smart-excalidraw
+package: cloud.lazycat.app.excalidrawsmart
 version: 0.0.1
 description: 用自然语言，绘制专业图表
-homepage: https://github.com/liujuntao123/smart-excalidraw-next
-author: liujuntao123
+homepage: https://github.com/AXY520/Smart-Excalidraw
+author: 
+locales:
+  zh:
+    name: smart-excalidraw
+    description: 用自然语言，绘制专业图表
+  en:
+    name: smart-excalidraw
+    description: Create professional charts using natural language.
 application:
-  subdomain: smart-excalidraw
+  subdomain: excalidrawsmart
   background_task: false
   multi_instance: false
   gpu_accel: false
   kvm_accel: false
   usb_accel: false
   routes:
-    - /=http://smart-excalidraw.smart-excalidraw.lzcapp:3000/
+    - /=http://smart-excalidraw:3000/
 services:
   smart-excalidraw:
-    image: registry.cn-hangzhou.aliyuncs.com/axy5920/excalidraw:0.0.1
+    image: registry.lazycat.cloud/aixinyin/axy5920/excalidraw:a64d4766c0e3e1a0
     environment:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
+unsupported_platforms:
+  - ios
+  - android
+  - tvos
