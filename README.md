@@ -2,12 +2,6 @@
 
 > **用自然语言，绘制专业图表**
 
-## 在线网站
-进入在线网站直接使用：https://smart-excalidraw.aizhi.site/
-
-🚀🚀🚀 限时福利
-添加底部作者微信进群可领取免费claude-4.5-sonnet key
-
 ## English Version
 Read the English version: [README_EN.md](README_EN.md)
 
