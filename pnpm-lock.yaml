@@ -11,6 +11,9 @@ importers:
       '@excalidraw/excalidraw':
         specifier: ^0.18.0
         version: 0.18.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@lazycatcloud/lzc-file-pickers':
+        specifier: ^2.0.10
+        version: 2.0.10
       '@monaco-editor/react':
         specifier: ^4.7.0
         version: 4.7.0(monaco-editor@0.54.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -355,6 +358,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lazycatcloud/lzc-file-pickers@2.0.10':
+    resolution: {integrity: sha512-wkIgSvEk/2LG23BqjA4chNc1E+s2HKfMObdfPM/zFjC3kA/7H9OVIWjTHc2z++Pi7XY2mEjLlQ8X6xX8Khn5PQ==}
 
   '@monaco-editor/loader@1.6.1':
     resolution: {integrity: sha512-w3tEnj9HYEC73wtjdpR089AqkUPskFRcdkxsiSFt3SoUc3OHpmu+leP94CXBm4mHfefmhsdfI0ZQu6qJ0wgtPg==}
@@ -3181,6 +3187,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lazycatcloud/lzc-file-pickers@2.0.10': {}
 
   '@monaco-editor/loader@1.6.1':
     dependencies:

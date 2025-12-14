@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import ImageUpload from './ImageUpload';
 import LoadingOverlay from './LoadingOverlay';
 import { generateImagePrompt } from '@/lib/image-utils';
+
+// Dynamically import CloudFilePicker to avoid SSR issues
+const CloudFilePicker = dynamic(() => import('./CloudFilePicker'), {
+  ssr: false,
+});
 
 // Chart type options
 // Must match CHART_TYPE_NAMES in lib/prompts.js
@@ -43,6 +49,7 @@ export default function Chat({ onSendMessage, isGenerating }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [fileContent, setFileContent] = useState(''); // Store parsed file content
   const [canGenerate, setCanGenerate] = useState(false); // Track if generation is possible
+  const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -126,8 +133,60 @@ export default function Chat({ onSendMessage, isGenerating }) {
     reader.readAsText(file);
   };
 
-  const handleFileButtonClick = () => {
+  const handleLocalFileClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleCloudFileSelect = async (files) => {
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    
+    // Validate file type
+    const validExtensions = ['.md', '.txt'];
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+    if (!validExtensions.includes(fileExtension)) {
+      setFileError('请选择 .md 或 .txt 文件');
+      setFileStatus('error');
+      setCanGenerate(false);
+      setIsCloudPickerOpen(false);
+      return;
+    }
+
+    // Validate file size (max 1MB)
+    const maxSize = 1 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setFileError('文件大小不能超过 1MB');
+      setFileStatus('error');
+      setCanGenerate(false);
+      setIsCloudPickerOpen(false);
+      return;
+    }
+
+    setSelectedFile(file);
+    setFileStatus('parsing');
+    setFileError('');
+    setFileContent('');
+    setCanGenerate(false);
+    setIsCloudPickerOpen(false);
+
+    try {
+      const content = await file.text();
+      if (content && content.trim()) {
+        setFileStatus('success');
+        setFileContent(content.trim());
+        setCanGenerate(true);
+      } else {
+        setFileError('文件内容为空');
+        setFileStatus('error');
+        setCanGenerate(false);
+      }
+    } catch (error) {
+      setFileError('文件读取失败');
+      setFileStatus('error');
+      setCanGenerate(false);
+    }
   };
 
   const handleFileGenerate = () => {
@@ -318,23 +377,30 @@ export default function Chat({ onSendMessage, isGenerating }) {
               disabled={isGenerating || fileStatus === 'parsing'}
             />
 
-            <button
-              onClick={handleFileButtonClick}
-              disabled={isGenerating || fileStatus === 'parsing'}
-              className="px-6 py-3 bg-gray-900 text-white rounded hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center space-x-2"
-            >
-              {(isGenerating || fileStatus === 'parsing') ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
+            {/* Upload Options */}
+            <div className="flex flex-col space-y-3 w-full max-w-md">
+              <button
+                onClick={handleLocalFileClick}
+                disabled={isGenerating || fileStatus === 'parsing'}
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center space-x-2"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-              )}
-              <span>
-                {fileStatus === 'parsing' ? '解析中...' :
-                 isGenerating ? '生成中...' : '选择文件'}
-              </span>
-            </button>
+                <span>从本地上传</span>
+              </button>
+
+              <button
+                onClick={() => setIsCloudPickerOpen(true)}
+                disabled={isGenerating || fileStatus === 'parsing'}
+                className="px-6 py-3 bg-white text-gray-900 border-2 border-gray-300 rounded-lg hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center space-x-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                </svg>
+                <span>从云盘上传</span>
+              </button>
+            </div>
 
             {/* File Status */}
             {selectedFile && (
@@ -423,6 +489,15 @@ export default function Chat({ onSendMessage, isGenerating }) {
           </div>
         )}
       </div>
+
+      {/* Cloud File Picker */}
+      <CloudFilePicker
+        isOpen={isCloudPickerOpen}
+        onClose={() => setIsCloudPickerOpen(false)}
+        onFileSelect={handleCloudFileSelect}
+        mode="open"
+        accept=".md,.txt"
+      />
     </div>
   );
 }

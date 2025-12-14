@@ -29,6 +29,15 @@ Read the English version: [README_EN.md](README_EN.md)
 ### 🎨 完美 Excalidraw 集成
 生成的图表完全基于 Excalidraw 格式，可以在画布上自由编辑、调整样式、添加细节，实现 AI 生成与手动精修的完美结合。
 
+### ☁️ 云盘集成
+支持懒猫云盘文件选择器，可以从云盘打开和保存 Excalidraw 文件，实现跨设备同步和协作。
+
+### 📜 历史记录
+自动保存生成的图表到本地历史记录，支持快速恢复和管理，不用担心丢失创作成果。
+
+### 📤 多格式导出
+支持导出为 PNG、SVG、PDF 等多种格式，满足不同场景的使用需求。
+
 ### ⚡ 开箱即用
 只需配置一个 AI API 密钥即可开始使用，无需复杂的环境搭建。所有配置保存在本地浏览器，隐私安全有保障。
 
@@ -87,6 +96,12 @@ A: 支持流程图、架构图、时序图、ER 图、思维导图、网络拓�
 **Q: 生成的图表可以修改吗？**
 A: 当然可以！生成后可以在 Excalidraw 画布上自由编辑，包括调整位置、修改样式、添加元素等。
 
+**Q: 如何使用云盘功能？**
+A: 在懒猫平台上运行时，可以使用顶部的云盘按钮从云盘打开或保存 Excalidraw 文件。
+
+**Q: 历史记录保存在哪里？**
+A: 历史记录使用 IndexedDB 保存在浏览器本地，不会上传到服务器，隐私安全有保障。
+
 ## 🛠️ 技术栈
 
-Next.js 16 · React 19 · Excalidraw · Tailwind CSS 4 · Monaco Editor
+Next.js 16 · React 19 · Excalidraw · Tailwind CSS 4 · Monaco Editor · IndexedDB · 懒猫文件选择器

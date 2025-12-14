@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: smart-excalidraw:latest
+    image: registry.cn-hangzhou.aliyuncs.com/axy5920/excalidraw:latest
     container_name: smart-excalidraw
     ports:
       - "3000:3000"

@@ -7,6 +7,7 @@ import CodeEditor from '@/components/CodeEditor';
 import ConfigModal from '@/components/ConfigModal';
 import HistoryPanel from '@/components/HistoryPanel';
 import ExportModal from '@/components/ExportModal';
+import CloudFilePicker from '@/components/CloudFilePicker';
 import { getConfig, getAllConfigs, setCurrentProvider, isConfigValid } from '@/lib/config';
 import { optimizeExcalidrawCode } from '@/lib/optimizeArrows';
 import { saveDiagramToHistory } from '@/lib/history';
@@ -23,6 +24,8 @@ export default function Home() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
+  const [cloudPickerMode, setCloudPickerMode] = useState('open'); // 'open' | 'save'
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [generatedCode, setGeneratedCode] = useState('');
   const [elements, setElements] = useState([]);
@@ -382,6 +385,69 @@ export default function Home() {
     };
   }, [isResizingHorizontal]);
 
+  // Handle cloud file picker
+  const handleCloudFileOpen = async (files) => {
+    try {
+      if (files && files.length > 0) {
+        const file = files[0];
+        const text = await file.text();
+        
+        // Try to parse as Excalidraw format
+        try {
+          const data = JSON.parse(text);
+          // Check if it's valid Excalidraw data
+          if (data.elements || Array.isArray(data)) {
+            const elements = data.elements || data;
+            const code = JSON.stringify(elements, null, 2);
+            setGeneratedCode(code);
+            tryParseAndApply(code);
+          } else {
+            alert('无效的 Excalidraw 文件格式');
+          }
+        } catch (error) {
+          console.error('Failed to parse file:', error);
+          alert('文件解析失败，请确保是有效的 Excalidraw 文件');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to read file:', error);
+      alert('文件读取失败');
+    }
+  };
+
+  const handleCloudFileSave = async (files) => {
+    try {
+      if (!excalidrawAPI) {
+        alert('画布未就绪，请稍后再试');
+        return;
+      }
+
+      // Get current elements from canvas
+      const sceneData = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      
+      // Create Excalidraw file data
+      const fileData = {
+        type: 'excalidraw',
+        version: 2,
+        source: 'https://excalidraw.com',
+        elements: sceneData,
+        appState: {
+          viewBackgroundColor: appState.viewBackgroundColor,
+          gridSize: appState.gridSize,
+        }
+      };
+
+      // TODO: 实际保存到云盘的逻辑需要根据懒猫平台的 API 来实现
+      // 目前使用文件选择器的保存功能
+      console.log('Saving to cloud:', fileData);
+      alert('云盘保存功能需要根据懒猫平台 API 实现');
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      alert('保存失败');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
@@ -391,6 +457,130 @@ export default function Home() {
           <p className="text-xs text-gray-500">AI 驱动的图表生成</p>
         </div>
         <div className="flex items-center space-x-3">
+          {/* File Operations Dropdown */}
+          <div className="relative group">
+            <button
+              className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded transition-colors"
+              title="文件操作"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              <span className="text-sm font-medium">文件</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Dropdown Menu */}
+            <div className="absolute left-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20">
+              <div className="py-1">
+                {/* Open from Local */}
+                <button
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.excalidraw,.json';
+                    input.onchange = async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        try {
+                          const text = await file.text();
+                          const data = JSON.parse(text);
+                          if (data.elements || Array.isArray(data)) {
+                            const elements = data.elements || data;
+                            const code = JSON.stringify(elements, null, 2);
+                            setGeneratedCode(code);
+                            tryParseAndApply(code);
+                          } else {
+                            alert('无效的 Excalidraw 文件格式');
+                          }
+                        } catch (error) {
+                          console.error('Failed to parse file:', error);
+                          alert('文件解析失败，请确保是有效的 Excalidraw 文件');
+                        }
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  从本地打开
+                </button>
+
+                {/* Open from Cloud */}
+                <button
+                  onClick={() => {
+                    setCloudPickerMode('open');
+                    setIsCloudPickerOpen(true);
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  从云盘打开
+                </button>
+
+                <div className="border-t border-gray-200 my-1"></div>
+
+                {/* Save to Local */}
+                <button
+                  onClick={() => {
+                    if (!excalidrawAPI) {
+                      alert('画布未就绪，请稍后再试');
+                      return;
+                    }
+                    const sceneData = excalidrawAPI.getSceneElements();
+                    const appState = excalidrawAPI.getAppState();
+                    const fileData = {
+                      type: 'excalidraw',
+                      version: 2,
+                      source: 'https://excalidraw.com',
+                      elements: sceneData,
+                      appState: {
+                        viewBackgroundColor: appState.viewBackgroundColor,
+                        gridSize: appState.gridSize,
+                      }
+                    };
+                    const blob = new Blob([JSON.stringify(fileData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `drawing-${Date.now()}.excalidraw`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  disabled={!elements || elements.length === 0}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  保存到本地
+                </button>
+
+                {/* Save to Cloud */}
+                <button
+                  onClick={() => {
+                    setCloudPickerMode('save');
+                    setIsCloudPickerOpen(true);
+                  }}
+                  disabled={!elements || elements.length === 0}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  保存到云盘
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* History Button */}
           <button
             onClick={() => setIsHistoryPanelOpen(true)}
@@ -578,6 +768,15 @@ export default function Home() {
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         excalidrawAPI={excalidrawAPI}
+      />
+
+      {/* Cloud File Picker */}
+      <CloudFilePicker
+        isOpen={isCloudPickerOpen}
+        onClose={() => setIsCloudPickerOpen(false)}
+        onFileSelect={cloudPickerMode === 'open' ? handleCloudFileOpen : handleCloudFileSave}
+        mode={cloudPickerMode}
+        accept=".excalidraw,.json"
       />
     </div>
   );

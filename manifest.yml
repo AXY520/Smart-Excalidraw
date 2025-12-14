@@ -19,11 +19,17 @@ application:
   gpu_accel: false
   kvm_accel: false
   usb_accel: false
+  file_handler:
+    mime:
+      - x-lzc-extension/md
+      - x-lzc-extension/txt
+    actions:
+      open: /open?file=%u
   routes:
     - /=http://smart-excalidraw:3000/
 services:
   smart-excalidraw:
-    image: registry.lazycat.cloud/aixinyin/axy5920/excalidraw:abb9b2a6cf1559d4
+    image: registry.cn-hangzhou.aliyuncs.com/axy5920/excalidraw:latest
     environment:
       - NODE_ENV=production
       - PORT=3000

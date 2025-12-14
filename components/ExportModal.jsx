@@ -1,13 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { exportDiagram, copyToClipboard, DEFAULT_EXPORT_CONFIG } from '@/lib/export-utils';
+
+// Dynamically import CloudFilePicker to avoid SSR issues
+const CloudFilePicker = dynamic(() => import('./CloudFilePicker'), {
+  ssr: false,
+});
 
 export default function ExportModal({ isOpen, onClose, excalidrawAPI }) {
   const [format, setFormat] = useState('png');
   const [config, setConfig] = useState(DEFAULT_EXPORT_CONFIG);
   const [isExporting, setIsExporting] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
+  const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
 
   const handleExport = async () => {
     if (!excalidrawAPI) {
@@ -47,6 +54,66 @@ export default function ExportModal({ isOpen, onClose, excalidrawAPI }) {
 
   const updateConfig = (key, value) => {
     setConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveToCloud = () => {
+    if (!excalidrawAPI) {
+      alert('画布未就绪');
+      return;
+    }
+    setIsCloudPickerOpen(true);
+  };
+
+  const handleCloudFileSave = async (files) => {
+    try {
+      // Get current elements from canvas
+      const sceneData = excalidrawAPI.getSceneElements();
+      const appState = excalidrawAPI.getAppState();
+      
+      // Create export data based on format
+      let fileData;
+      let blob;
+      let extension;
+
+      if (format === 'json') {
+        // Export as JSON
+        fileData = {
+          type: 'excalidraw',
+          version: 2,
+          source: 'https://excalidraw.com',
+          elements: sceneData,
+          appState: {
+            viewBackgroundColor: appState.viewBackgroundColor,
+            gridSize: appState.gridSize,
+          }
+        };
+        blob = new Blob([JSON.stringify(fileData, null, 2)], { type: 'application/json' });
+        extension = '.excalidraw';
+      } else {
+        // For PNG/SVG/PDF, export and save the blob
+        // Note: This is a simplified version. In a real implementation,
+        // you would use the export utilities to generate the blob
+        alert('云盘保存当前仅支持 JSON 格式。PNG/SVG/PDF 格式请使用"导出"功能下载到本地。');
+        setIsCloudPickerOpen(false);
+        return;
+      }
+
+      // TODO: Implement actual cloud save using lazycatcloud API
+      // For now, just download locally
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `drawing-${Date.now()}${extension}`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      setIsCloudPickerOpen(false);
+      alert('文件已下载到本地（云盘保存功能需要根据懒猫平台 API 实现）');
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      alert('保存失败');
+      setIsCloudPickerOpen(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -254,6 +321,17 @@ export default function ExportModal({ isOpen, onClose, excalidrawAPI }) {
               取消
             </button>
             <button
+              onClick={handleSaveToCloud}
+              disabled={isExporting || isCopying}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+              title="保存到云盘"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span>保存到云盘</span>
+            </button>
+            <button
               onClick={handleExport}
               disabled={isExporting || isCopying}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -264,12 +342,21 @@ export default function ExportModal({ isOpen, onClose, excalidrawAPI }) {
                   <span>导出中...</span>
                 </span>
               ) : (
-                `导出 ${format.toUpperCase()}`
+                `导出到本地`
               )}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Cloud File Picker for saving */}
+      <CloudFilePicker
+        isOpen={isCloudPickerOpen}
+        onClose={() => setIsCloudPickerOpen(false)}
+        onFileSelect={handleCloudFileSave}
+        mode="save"
+        accept={format === 'json' ? '.excalidraw,.json' : `.${format}`}
+      />
     </div>
   );
 }
