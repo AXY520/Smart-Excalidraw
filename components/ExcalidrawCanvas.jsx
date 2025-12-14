@@ -16,7 +16,7 @@ const getConvertFunction = async () => {
   return excalidrawModule.convertToExcalidrawElements;
 };
 
-export default function ExcalidrawCanvas({ elements }) {
+export default function ExcalidrawCanvas({ elements, onAPIReady }) {
   const [convertToExcalidrawElements, setConvertFunction] = useState(null);
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
 
@@ -40,6 +40,13 @@ export default function ExcalidrawCanvas({ elements }) {
       return [];
     }
   }, [elements, convertToExcalidrawElements]);
+
+  // Notify parent when API is ready
+  useEffect(() => {
+    if (excalidrawAPI && onAPIReady) {
+      onAPIReady(excalidrawAPI);
+    }
+  }, [excalidrawAPI, onAPIReady]);
 
   // Auto zoom to fit content when API is ready and elements change
   useEffect(() => {

@@ -6,8 +6,12 @@ import Chat from '@/components/Chat';
 import CodeEditor from '@/components/CodeEditor';
 import ConfigModal from '@/components/ConfigModal';
 import ContactModal from '@/components/ContactModal';
+import HistoryPanel from '@/components/HistoryPanel';
+import ExportModal from '@/components/ExportModal';
 import { getConfig, getAllConfigs, setCurrentProvider, isConfigValid } from '@/lib/config';
 import { optimizeExcalidrawCode } from '@/lib/optimizeArrows';
+import { saveDiagramToHistory } from '@/lib/history';
+import { generateThumbnail } from '@/lib/export-utils';
 
 // Dynamically import ExcalidrawCanvas to avoid SSR issues
 const ExcalidrawCanvas = dynamic(() => import('@/components/ExcalidrawCanvas'), {
@@ -19,6 +23,9 @@ export default function Home() {
   const [allConfigs, setAllConfigs] = useState({ providers: [], currentProviderId: null });
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [generatedCode, setGeneratedCode] = useState('');
   const [elements, setElements] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -231,6 +238,24 @@ export default function Home() {
       const optimizedCode = optimizeExcalidrawCode(processedCode);
       setGeneratedCode(optimizedCode);
       tryParseAndApply(optimizedCode);
+
+      // Save to history after successful generation
+      try {
+        const parsedElements = JSON.parse(optimizedCode.match(/\[[\s\S]*\]/)?.[0] || '[]');
+        const thumbnail = excalidrawAPI ? await generateThumbnail(excalidrawAPI, 200) : null;
+        
+        await saveDiagramToHistory({
+          title: `图表 - ${new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+          description: userMessage.substring(0, 100),
+          code: optimizedCode,
+          elements: parsedElements,
+          thumbnail: thumbnail,
+          chartType: chartType,
+          userInput: userMessage,
+        });
+      } catch (error) {
+        console.error('Failed to save to history:', error);
+      }
     } catch (error) {
       console.error('Error generating code:', error);
       // Check if it's a network error
@@ -368,6 +393,29 @@ export default function Home() {
           <p className="text-xs text-gray-500">AI 驱动的图表生成</p>
         </div>
         <div className="flex items-center space-x-3">
+          {/* History Button */}
+          <button
+            onClick={() => setIsHistoryPanelOpen(true)}
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            title="历史记录"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+
+          {/* Export Button */}
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            disabled={!elements || elements.length === 0}
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="导出图表"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+
           {config && isConfigValid(config) && (
             <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 rounded border border-gray-300">
               <div className="w-2 h-2 bg-gray-900 rounded-full"></div>
@@ -502,7 +550,10 @@ export default function Home() {
 
         {/* Right Panel - Excalidraw Canvas */}
         <div style={{ width: isLeftPanelVisible ? `${100 - leftPanelWidth}%` : '100%' }} className="bg-gray-50">
-          <ExcalidrawCanvas elements={elements} />
+          <ExcalidrawCanvas
+            elements={elements}
+            onAPIReady={setExcalidrawAPI}
+          />
         </div>
       </div>
 
@@ -518,6 +569,23 @@ export default function Home() {
       <ContactModal
         isOpen={isContactModalOpen}
         onClose={() => setIsContactModalOpen(false)}
+      />
+
+      {/* History Panel */}
+      <HistoryPanel
+        isOpen={isHistoryPanelOpen}
+        onClose={() => setIsHistoryPanelOpen(false)}
+        onLoadDiagram={(diagram) => {
+          setGeneratedCode(diagram.code);
+          tryParseAndApply(diagram.code);
+        }}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        excalidrawAPI={excalidrawAPI}
       />
     </div>
   );
