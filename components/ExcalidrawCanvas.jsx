@@ -73,6 +73,7 @@ export default function ExcalidrawCanvas({ elements, onAPIReady }) {
     <div className="w-full h-full">
       <Excalidraw
         key={canvasKey}
+        langCode="zh-CN"
         excalidrawAPI={(api) => setExcalidrawAPI(api)}
         initialData={{
           elements: convertedElements,
