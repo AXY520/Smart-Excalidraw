@@ -19,10 +19,16 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 
 # debug
 npm-debug.log*
@@ -32,6 +38,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,4 +46,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# custom
 *.lpk
+helloworld/
+
+# local data
+/data/*.json
+!/data/llm-configs.json
+
+# Docker
+.dockerignore
+docker-compose.override.yml

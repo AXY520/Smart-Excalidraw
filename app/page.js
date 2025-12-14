@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import Chat from '@/components/Chat';
 import CodeEditor from '@/components/CodeEditor';
 import ConfigModal from '@/components/ConfigModal';
-import ContactModal from '@/components/ContactModal';
 import HistoryPanel from '@/components/HistoryPanel';
 import ExportModal from '@/components/ExportModal';
 import { getConfig, getAllConfigs, setCurrentProvider, isConfigValid } from '@/lib/config';
@@ -22,7 +21,6 @@ export default function Home() {
   const [config, setConfig] = useState(null);
   const [allConfigs, setAllConfigs] = useState({ providers: [], currentProviderId: null });
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
@@ -565,12 +563,6 @@ export default function Home() {
         initialConfig={config}
       />
       
-      {/* Contact Modal */}
-      <ContactModal
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-      />
-
       {/* History Panel */}
       <HistoryPanel
         isOpen={isHistoryPanelOpen}
